@@ -1,6 +1,11 @@
 import { Router } from "express";
 import { Upload } from "../middlewares/upload.middleware.js";
-import { userRegister } from "../controllers/user.controller.js";
+import { jwtverify } from "../middlewares/auth.middleware.js";
+import { 
+  userRegister,
+  userLogin,
+  userLogout 
+} from "../controllers/user.controller.js";
 
 const router = Router();
 
@@ -11,5 +16,15 @@ router.route("/register").post(
   ]),
   userRegister
 );
+
+router.route("/login").post(
+  Upload.none(),
+  userLogin
+)
+
+router.route("/logout").post(
+  jwtverify,
+  userLogout
+)
 
 export default router;
