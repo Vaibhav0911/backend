@@ -5,6 +5,7 @@ import { cloudinary } from "../utils/uploadToCloudinary.js";
 import { Users } from "../models/users.model.js";
 import fs from "fs/promises";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 const options = {
   httpOnly: true,
@@ -346,13 +347,14 @@ const userWatchHistory = AsyncHandler(async (req, res) => {
               thumbnail: 1,
               title: 1,
               duration: 1,
+              owner: 1,
             }
           }
         ]
       }
     },
     {
-      project: {
+      $project: {
         watchHistory: 1
       }
     }
@@ -401,7 +403,7 @@ const getUserVideos = AsyncHandler(async (req, res) => {
 
   if(!userVideos)                   throw new ApiError(400, "User not found!");
 
-  res.status(200).json(200, "Successfully fetched user videos", userVideos);
+  res.status(200).json(new ApiResponse(200, "Successfully fetched user videos", userVideos));
 })
 
 export {

@@ -1,5 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import { nanoid } from "nanoid";
+import slugify from "slugify";
 
 const videoSchema = new Schema(
   {
@@ -58,7 +59,7 @@ const videoSchema = new Schema(
   }
 );
 
-videoSchema.pre("save", async function (next) {
+videoSchema.pre("save", async function () {
   if (!this.videoId) this.videoId = `vid_${nanoid(8)}`;
 
   if (this.isModified("title")) {
@@ -67,13 +68,12 @@ videoSchema.pre("save", async function (next) {
       strict: true,
     });
 
-    const existing = mongoose.model.Videos.findOne({
+    const existing = await this.constructor.findOne({
       slug: baseSlug,
     });
 
     this.slug = existing ? `${baseSlug}-${nanoid(4)}` : baseSlug;
   }
-  next();
 });
 
 export const Videos = mongoose.model("Videos", videoSchema);
