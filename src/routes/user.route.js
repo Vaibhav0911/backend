@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { Upload } from "../middlewares/upload.middleware.js";
 import { jwtverify } from "../middlewares/auth.middleware.js";
+import { optionalAuth } from "../middlewares/optionalAuth.middleware.js";
 import { 
   updateProfileImage,
   updateCoverImage,
@@ -32,7 +33,7 @@ router.route("/update-cover-image").patch(
 )
 
 router.route("/channel-profile/:username").get(
-  jwtverify,
+  optionalAuth,
   getUserChannelProfile
 )
 
@@ -42,7 +43,6 @@ router.route("/watch-history").get(
 )
 
 router.route("/:username/videos").get(
-  jwtverify,
   getUserVideos
 )
 

@@ -12,7 +12,7 @@ export const optionalAuth = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-
+    
     const user = await Users.findById(decoded?.id).select(
       "-password -refreshToken"
     );

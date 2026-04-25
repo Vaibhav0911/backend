@@ -130,7 +130,7 @@ const getUserChannelProfile = AsyncHandler(async (req, res) => {
         subscribedChannelsCount: { $size: "$subscribedChannels"},
         isSubscribed: {
           $cond: {
-            if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+            if: { $in: [new mongoose.Types.ObjectId(req.user?._id), "$subscribers.subscriber"] },
             then: true,
             else: false
           }
@@ -149,7 +149,7 @@ const getUserChannelProfile = AsyncHandler(async (req, res) => {
       }
     } 
   ])
-
+  
   if(!channel.length)          throw new ApiError(404, "channel not found!");
   
   res.status(200).json(new ApiResponse(200, "Channel profile fetch successfully", channel[0]));
@@ -194,7 +194,11 @@ const userWatchHistory = AsyncHandler(async (req, res) => {
               thumbnail: 1,
               title: 1,
               duration: 1,
+              views: 1,
+              videoId: 1,
+              slug: 1,
               owner: 1,
+              createdAt: 1,
             }
           }
         ]
