@@ -181,14 +181,102 @@ const getVideo = AsyncHandler(async (req, res) => {
     .json(new ApiResponse(200, "Successfully get video", responseVideo));
 });
 
+// const getAllVideos = AsyncHandler(async (req, res) => {
+//   const page = Math.max(Number(req.query.page) || 1, 1);
+//   const limit = Math.max(Number(req.query.limit) || 10, 1);
+//   const skip = (page - 1) * limit;
+
+//   const result = await Videos.aggregate([
+//     {
+//       $match: { isPublised: true },
+//     },
+//     {
+//       $sort: { createdAt: -1, _id: -1 },
+//     },
+//     {
+//       $facet: {
+//         totalCount: [{ $count: "count" }],
+//         videos: [
+//           { $skip: skip },
+//           { $limit: limit },
+//           {
+//             $lookup: {
+//               from: "users",
+//               localField: "owner",
+//               foreignField: "_id",
+//               as: "owner",
+//               pipeline: [
+//                 {
+//                   $project: {
+//                     profileimage: 1,
+//                     username: 1,
+//                   },
+//                 },
+//               ],
+//             },
+//           },
+//           {
+//             $addFields: {
+//               owner: { $arrayElemAt: ["$owner", 0] },
+//             },
+//           },
+//           {
+//             $project: {
+//               thumbnail: 1,
+//               videofile: 1,
+//               slug: 1,
+//               title: 1,
+//               duration: 1,
+//               views: 1,
+//               owner: 1,
+//               createdAt: 1,
+//             },
+//           },
+//         ],
+//       },
+//     },
+//   ]);
+
+//   const totalVideos = result[0].totalCount[0]?.count || 0;
+//   const videos = result[0].videos;
+//   const totalPages = Math.ceil(totalVideos / limit);
+
+//   res.status(200).json(
+//     new ApiResponse(200, "Successfully fetch all videos", {
+//       page,
+//       limit,
+//       totalVideos,
+//       totalPages,
+//       hasNextPage: page < totalPages,
+//       hasPreviousPage: page > 1,
+//       videos,
+//     })
+//   );
+// });
+
 const getAllVideos = AsyncHandler(async (req, res) => {
   const page = Math.max(Number(req.query.page) || 1, 1);
   const limit = Math.max(Number(req.query.limit) || 10, 1);
   const skip = (page - 1) * limit;
 
+  const { search = "" } = req.query;
+
+  // 🔥 Dynamic match stage
+  const matchStage = {
+    isPublised: true,
+  };
+
+  // ✅ Add search condition
+  if (search.trim()) {
+    matchStage.$or = [
+      { title: { $regex: search.trim(), $options: "i" } },
+      { description: { $regex: search.trim(), $options: "i" } },
+    ];
+  }
+
   const result = await Videos.aggregate([
     {
-      $match: { isPublised: true },
+      $match: matchStage,
     },
     {
       $sort: { createdAt: -1, _id: -1 },
@@ -199,6 +287,7 @@ const getAllVideos = AsyncHandler(async (req, res) => {
         videos: [
           { $skip: skip },
           { $limit: limit },
+
           {
             $lookup: {
               from: "users",
@@ -226,6 +315,7 @@ const getAllVideos = AsyncHandler(async (req, res) => {
               videofile: 1,
               slug: 1,
               title: 1,
+              description: 1, // ✅ include for search relevance
               duration: 1,
               views: 1,
               owner: 1,
@@ -237,20 +327,26 @@ const getAllVideos = AsyncHandler(async (req, res) => {
     },
   ]);
 
-  const totalVideos = result[0].totalCount[0]?.count || 0;
-  const videos = result[0].videos;
+  const totalVideos = result[0]?.totalCount[0]?.count || 0;
+  const videos = result[0]?.videos || [];
   const totalPages = Math.ceil(totalVideos / limit);
 
-  res.status(200).json(
-    new ApiResponse(200, "Successfully fetch all videos", {
-      page,
-      limit,
-      totalVideos,
-      totalPages,
-      hasNextPage: page < totalPages,
-      hasPreviousPage: page > 1,
-      videos,
-    })
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      search.trim()
+        ? "Search videos fetched successfully"
+        : "Successfully fetched all videos",
+      {
+        page,
+        limit,
+        totalVideos,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+        videos,
+      }
+    )
   );
 });
 
